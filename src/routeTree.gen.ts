@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiV1StatusRouteImport } from './routes/api/v1/status'
 import { Route as ApiV1ToolsRouteImport } from './routes/api/v1/tools'
+import { Route as ApiV1ToolsExecuteRouteImport } from './routes/api/v1/tools.execute'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,39 +35,63 @@ const ApiV1ToolsRoute = ApiV1ToolsRouteImport.update({
   path: '/api/v1/tools',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1ToolsExecuteRoute = ApiV1ToolsExecuteRouteImport.update({
+  id: '/execute',
+  path: '/execute',
+  getParentRoute: () => ApiV1ToolsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/chat': typeof ApiChatRoute
   '/api/v1/status': typeof ApiV1StatusRoute
-  '/api/v1/tools': typeof ApiV1ToolsRoute
+  '/api/v1/tools': typeof ApiV1ToolsRouteWithChildren
+  '/api/v1/tools/execute': typeof ApiV1ToolsExecuteRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/chat': typeof ApiChatRoute
   '/api/v1/status': typeof ApiV1StatusRoute
-  '/api/v1/tools': typeof ApiV1ToolsRoute
+  '/api/v1/tools': typeof ApiV1ToolsRouteWithChildren
+  '/api/v1/tools/execute': typeof ApiV1ToolsExecuteRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/api/chat': typeof ApiChatRoute
   '/api/v1/status': typeof ApiV1StatusRoute
-  '/api/v1/tools': typeof ApiV1ToolsRoute
+  '/api/v1/tools': typeof ApiV1ToolsRouteWithChildren
+  '/api/v1/tools/execute': typeof ApiV1ToolsExecuteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/chat' | '/api/v1/status' | '/api/v1/tools'
+  fullPaths:
+    | '/'
+    | '/api/chat'
+    | '/api/v1/status'
+    | '/api/v1/tools'
+    | '/api/v1/tools/execute'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/chat' | '/api/v1/status' | '/api/v1/tools'
-  id: '__root__' | '/' | '/api/chat' | '/api/v1/status' | '/api/v1/tools'
+  to:
+    | '/'
+    | '/api/chat'
+    | '/api/v1/status'
+    | '/api/v1/tools'
+    | '/api/v1/tools/execute'
+  id:
+    | '__root__'
+    | '/'
+    | '/api/chat'
+    | '/api/v1/status'
+    | '/api/v1/tools'
+    | '/api/v1/tools/execute'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiV1StatusRoute: typeof ApiV1StatusRoute
-  ApiV1ToolsRoute: typeof ApiV1ToolsRoute
+  ApiV1ToolsRoute: typeof ApiV1ToolsRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -99,14 +124,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1ToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/tools/execute': {
+      id: '/api/v1/tools/execute'
+      path: '/execute'
+      fullPath: '/api/v1/tools/execute'
+      preLoaderRoute: typeof ApiV1ToolsExecuteRouteImport
+      parentRoute: typeof ApiV1ToolsRoute
+    }
   }
 }
+
+interface ApiV1ToolsRouteChildren {
+  ApiV1ToolsExecuteRoute: typeof ApiV1ToolsExecuteRoute
+}
+
+const ApiV1ToolsRouteChildren: ApiV1ToolsRouteChildren = {
+  ApiV1ToolsExecuteRoute: ApiV1ToolsExecuteRoute,
+}
+
+const ApiV1ToolsRouteWithChildren = ApiV1ToolsRoute._addFileChildren(
+  ApiV1ToolsRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiChatRoute: ApiChatRoute,
   ApiV1StatusRoute: ApiV1StatusRoute,
-  ApiV1ToolsRoute: ApiV1ToolsRoute,
+  ApiV1ToolsRoute: ApiV1ToolsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
