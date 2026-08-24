@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiV1StatusRouteImport } from './routes/api/v1/status'
 import { Route as ApiV1ToolsRouteImport } from './routes/api/v1/tools'
@@ -18,6 +19,11 @@ import { Route as ApiV1ToolsExecuteRouteImport } from './routes/api/v1/tools.exe
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
@@ -43,6 +49,7 @@ const ApiV1ToolsExecuteRoute = ApiV1ToolsExecuteRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/settings': typeof SettingsRoute
   '/api/chat': typeof ApiChatRoute
   '/api/v1/status': typeof ApiV1StatusRoute
   '/api/v1/tools': typeof ApiV1ToolsRouteWithChildren
@@ -50,6 +57,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/settings': typeof SettingsRoute
   '/api/chat': typeof ApiChatRoute
   '/api/v1/status': typeof ApiV1StatusRoute
   '/api/v1/tools': typeof ApiV1ToolsRouteWithChildren
@@ -58,6 +66,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/settings': typeof SettingsRoute
   '/api/chat': typeof ApiChatRoute
   '/api/v1/status': typeof ApiV1StatusRoute
   '/api/v1/tools': typeof ApiV1ToolsRouteWithChildren
@@ -67,6 +76,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/settings'
     | '/api/chat'
     | '/api/v1/status'
     | '/api/v1/tools'
@@ -74,6 +84,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/settings'
     | '/api/chat'
     | '/api/v1/status'
     | '/api/v1/tools'
@@ -81,6 +92,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/settings'
     | '/api/chat'
     | '/api/v1/status'
     | '/api/v1/tools'
@@ -89,6 +101,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SettingsRoute: typeof SettingsRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiV1StatusRoute: typeof ApiV1StatusRoute
   ApiV1ToolsRoute: typeof ApiV1ToolsRouteWithChildren
@@ -101,6 +114,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/chat': {
@@ -148,6 +168,7 @@ const ApiV1ToolsRouteWithChildren = ApiV1ToolsRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SettingsRoute: SettingsRoute,
   ApiChatRoute: ApiChatRoute,
   ApiV1StatusRoute: ApiV1StatusRoute,
   ApiV1ToolsRoute: ApiV1ToolsRouteWithChildren,
