@@ -3,17 +3,21 @@
  *
  * Every tool declares the permissions it needs. The registry refuses to run a
  * tool whose permissions are not granted, and every permission that touches the
- * device or the network is denied in this phase.
+ * device is denied in this phase.
  *
  * Hard rules for this phase:
  *  - no arbitrary code execution from user messages,
- *  - no device control (calls, SMS, files, apps, sensors),
- *  - no outbound network access from tools.
+ *  - no device control (calls, SMS, apps, sensors),
+ *  - network access is limited to the read-only web search skill,
+ *  - file access is limited to V1's own sandboxed workspace (never the host FS).
  */
 export const ALL_PERMISSIONS = [
   "read:time",
   "read:conversation",
   "write:memory",
+  "write:plan",
+  "net:search",
+  "fs:workspace",
   "net:fetch",
   "device:control",
   "system:exec",
@@ -26,6 +30,9 @@ export const GRANTED_PERMISSIONS: readonly Permission[] = [
   "read:time",
   "read:conversation",
   "write:memory",
+  "write:plan",
+  "net:search",
+  "fs:workspace",
 ];
 
 /** Permissions that must never be granted automatically. */

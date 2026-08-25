@@ -7,17 +7,53 @@
  */
 import type { ChatMessage } from "../types";
 
+/** A tool call the model asked V1 to run. */
+export type EngineToolCall = {
+  id: string;
+  name: string;
+  /** Raw JSON arguments produced by the model. Always validated before use. */
+  arguments: unknown;
+};
+
+/**
+ * Messages exchanged with the engine. This is a superset of the client-facing
+ * `ChatMessage` so a tool result can be fed back into the loop.
+ */
+export type EngineMessage =
+  | ChatMessage
+  | {
+      role: "assistant";
+      content: string;
+      toolCalls: EngineToolCall[];
+    }
+  | {
+      role: "tool";
+      toolCallId: string;
+      name: string;
+      content: string;
+    };
+
+/** Tool description handed to the model (JSON Schema parameters). */
+export type EngineTool = {
+  name: string;
+  description: string;
+  parameters: Record<string, unknown>;
+};
+
 export type ModelEngineRequest = {
   /** Instructions describing how V1 should behave for this turn. */
   system: string;
   /** Conversation window (short-term memory) plus the new user message. */
-  messages: ChatMessage[];
+  messages: EngineMessage[];
   temperature?: number;
   maxOutputTokens?: number;
+  /** Tools the model may call. Omitted when tool calling is not wanted. */
+  tools?: EngineTool[];
 };
 
 export type ModelEngineResult = {
   text: string;
+  toolCalls?: EngineToolCall[];
 };
 
 export type ModelEngineErrorCode =
@@ -44,5 +80,7 @@ export type ModelEngine = {
   readonly model: string;
   /** True when the engine has everything it needs to answer. */
   isConfigured(): boolean;
+  /** True when the engine can execute tool calls. */
+  readonly supportsTools?: boolean;
   generate(request: ModelEngineRequest): Promise<ModelEngineResult>;
 };
