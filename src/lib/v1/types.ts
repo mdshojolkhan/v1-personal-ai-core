@@ -43,6 +43,62 @@ export type ToolTrace = {
   summary: string;
 };
 
+// ---------------------------------------------------------------------------
+// Task planning
+// ---------------------------------------------------------------------------
+
+export const planStepStatusSchema = z.enum([
+  "pending",
+  "running",
+  "completed",
+  "failed",
+  "skipped",
+]);
+export type PlanStepStatus = z.infer<typeof planStepStatusSchema>;
+
+/** One step in a conversation's task plan. */
+export type PlanStep = {
+  id: string;
+  title: string;
+  status: PlanStepStatus;
+  /** Optional progress/result note written when the step is updated. */
+  note?: string;
+};
+
+// ---------------------------------------------------------------------------
+// Agent step / action trace
+// ---------------------------------------------------------------------------
+
+export const agentStepStatusSchema = z.enum([
+  "running",
+  "completed",
+  "failed",
+  "refused",
+]);
+export type AgentStepStatus = z.infer<typeof agentStepStatusSchema>;
+
+/**
+ * One auditable action in the agent loop (model → tool call → result).
+ * Every action the orchestrator takes is recorded as an AgentStep so the
+ * client can render exactly what happened and why.
+ */
+export type AgentStep = {
+  /** Stable id within the turn, e.g. "step-1". */
+  id: string;
+  /** Tool/skill that was invoked, or "model" for a model-only step. */
+  toolId: string;
+  /** Arguments passed to the tool. */
+  input: Record<string, unknown>;
+  status: AgentStepStatus;
+  /** Tool result summary when the step completed. */
+  result?: string;
+  /** Error message when the step failed or was refused. */
+  error?: string;
+  /** ISO timestamps for the action lifecycle. */
+  startedAt: string;
+  finishedAt?: string;
+};
+
 /** POST /api/chat success response. */
 export type ChatResponse = {
   message: string;
@@ -51,6 +107,10 @@ export type ChatResponse = {
   intent: Intent;
   conversationId: string;
   toolsUsed: ToolTrace[];
+  /** Task plan for this conversation, when one exists. */
+  plan?: PlanStep[];
+  /** Ordered action trace for this turn, when any actions ran. */
+  steps?: AgentStep[];
 };
 
 export type ApiError = {
