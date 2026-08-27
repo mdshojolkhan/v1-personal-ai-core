@@ -33,6 +33,11 @@ export const chatRequestSchema = z.object({
   mode: assistantModeSchema.optional(),
   /** Stable id so the orchestrator can group a conversation. */
   conversationId: z.string().min(1).max(120).optional(),
+  /**
+   * Skills the user explicitly approved for this turn. Approval-gated skills
+   * are refused unless their id appears here.
+   */
+  approvedToolIds: z.array(z.string().min(1).max(80)).max(20).optional(),
 });
 export type ChatRequest = z.infer<typeof chatRequestSchema>;
 
