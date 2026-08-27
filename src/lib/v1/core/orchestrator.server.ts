@@ -16,9 +16,12 @@ import {
 } from "../model-engine/engine";
 import { getModelEngine } from "../model-engine/index.server";
 import { shortTermMemory } from "../memory/index.server";
+import { planStore } from "../planning/index.server";
 import { toolRegistry } from "../tools/builtin.server";
-import { ToolError, type ToolRegistry } from "../tools/registry";
+import type { ToolRegistry } from "../tools/registry";
+import { DEFAULT_MAX_AGENT_STEPS, runAgentLoop } from "./agent-loop.server";
 import type {
+  AgentStep,
   AssistantMode,
   ChatMessage,
   ChatRequest,
