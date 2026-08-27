@@ -7,7 +7,16 @@
  */
 import type { z } from "zod";
 import type { PublicTool } from "../types";
-import { assertPermissions, type Permission } from "../security/permissions";
+import {
+  assertPermissions,
+  isPermissionGranted,
+  type Permission,
+} from "../security/permissions";
+import type { EngineTool } from "../model-engine/engine";
+import {
+  toParametersSchema,
+  type JsonSchemaObject,
+} from "./json-schema";
 
 export type ToolContext = {
   /** Conversation the tool was invoked from. */
@@ -22,6 +31,14 @@ export type V1Tool<Schema extends z.ZodTypeAny = z.ZodTypeAny> = {
   requiresApproval: boolean;
   permissions: Permission[];
   inputSchema: Schema;
+  /**
+   * Optional hand-written JSON Schema for the model. When omitted it is
+   * derived from `inputSchema`, so the validated shape and the advertised
+   * shape can never drift apart.
+   */
+  parameters?: JsonSchemaObject;
+  /** Hidden from the model (still runnable through the explicit tool API). */
+  hiddenFromModel?: boolean;
   execute(
     input: z.infer<Schema>,
     context: ToolContext,
@@ -68,6 +85,40 @@ export class ToolRegistry {
       requiresApproval: tool.requiresApproval,
       permissions: tool.permissions,
     }));
+  }
+
+  /** True when every permission a tool needs is currently granted. */
+  isAllowed(tool: V1Tool): boolean {
+    return tool.permissions.every((permission) =>
+      isPermissionGranted(permission),
+    );
+  }
+
+  /** Model-ready JSON Schema parameters for a tool. */
+  parametersFor(tool: V1Tool): JsonSchemaObject {
+    return tool.parameters ?? toParametersSchema(tool.inputSchema);
+  }
+
+  /** Tools the permission system currently allows. */
+  listAllowed(): V1Tool[] {
+    return this.list().filter((tool) => this.isAllowed(tool));
+  }
+
+  /**
+   * Tool definitions the model is allowed to see and call.
+   *
+   * Any tool requiring a forbidden permission (device control, system exec,
+   * arbitrary network fetch) is filtered out here and therefore never reaches
+   * the model at all.
+   */
+  listForModel(): EngineTool[] {
+    return this.listAllowed()
+      .filter((tool) => tool.hiddenFromModel !== true)
+      .map((tool) => ({
+        name: tool.id,
+        description: tool.description,
+        parameters: this.parametersFor(tool),
+      }));
   }
 
   async run(
