@@ -14,6 +14,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiV1StatusRouteImport } from './routes/api/v1/status'
 import { Route as ApiV1ToolsRouteImport } from './routes/api/v1/tools'
+import { Route as ApiV1WorkspaceRouteImport } from './routes/api/v1/workspace'
 import { Route as ApiV1ToolsExecuteRouteImport } from './routes/api/v1/tools.execute'
 
 const IndexRoute = IndexRouteImport.update({
@@ -41,6 +42,11 @@ const ApiV1ToolsRoute = ApiV1ToolsRouteImport.update({
   path: '/api/v1/tools',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1WorkspaceRoute = ApiV1WorkspaceRouteImport.update({
+  id: '/api/v1/workspace',
+  path: '/api/v1/workspace',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1ToolsExecuteRoute = ApiV1ToolsExecuteRouteImport.update({
   id: '/execute',
   path: '/execute',
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/api/chat': typeof ApiChatRoute
   '/api/v1/status': typeof ApiV1StatusRoute
   '/api/v1/tools': typeof ApiV1ToolsRouteWithChildren
+  '/api/v1/workspace': typeof ApiV1WorkspaceRoute
   '/api/v1/tools/execute': typeof ApiV1ToolsExecuteRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +68,7 @@ export interface FileRoutesByTo {
   '/api/chat': typeof ApiChatRoute
   '/api/v1/status': typeof ApiV1StatusRoute
   '/api/v1/tools': typeof ApiV1ToolsRouteWithChildren
+  '/api/v1/workspace': typeof ApiV1WorkspaceRoute
   '/api/v1/tools/execute': typeof ApiV1ToolsExecuteRoute
 }
 export interface FileRoutesById {
@@ -70,6 +78,7 @@ export interface FileRoutesById {
   '/api/chat': typeof ApiChatRoute
   '/api/v1/status': typeof ApiV1StatusRoute
   '/api/v1/tools': typeof ApiV1ToolsRouteWithChildren
+  '/api/v1/workspace': typeof ApiV1WorkspaceRoute
   '/api/v1/tools/execute': typeof ApiV1ToolsExecuteRoute
 }
 export interface FileRouteTypes {
@@ -80,6 +89,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/v1/status'
     | '/api/v1/tools'
+    | '/api/v1/workspace'
     | '/api/v1/tools/execute'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -88,6 +98,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/v1/status'
     | '/api/v1/tools'
+    | '/api/v1/workspace'
     | '/api/v1/tools/execute'
   id:
     | '__root__'
@@ -96,6 +107,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/v1/status'
     | '/api/v1/tools'
+    | '/api/v1/workspace'
     | '/api/v1/tools/execute'
   fileRoutesById: FileRoutesById
 }
@@ -105,6 +117,7 @@ export interface RootRouteChildren {
   ApiChatRoute: typeof ApiChatRoute
   ApiV1StatusRoute: typeof ApiV1StatusRoute
   ApiV1ToolsRoute: typeof ApiV1ToolsRouteWithChildren
+  ApiV1WorkspaceRoute: typeof ApiV1WorkspaceRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -144,6 +157,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1ToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/workspace': {
+      id: '/api/v1/workspace'
+      path: '/api/v1/workspace'
+      fullPath: '/api/v1/workspace'
+      preLoaderRoute: typeof ApiV1WorkspaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/tools/execute': {
       id: '/api/v1/tools/execute'
       path: '/execute'
@@ -172,6 +192,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiChatRoute: ApiChatRoute,
   ApiV1StatusRoute: ApiV1StatusRoute,
   ApiV1ToolsRoute: ApiV1ToolsRouteWithChildren,
+  ApiV1WorkspaceRoute: ApiV1WorkspaceRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
