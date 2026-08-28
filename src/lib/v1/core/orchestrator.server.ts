@@ -69,24 +69,21 @@ export function classifyIntent(message: string): Intent {
   return "task";
 }
 
-/** Decide whether a built-in skill can answer this turn on its own. */
-function pickTool(
-  message: string,
-  registry: ToolRegistry,
-): { toolId: string; input: Record<string, unknown> } | null {
-  const normalized = message.toLowerCase();
-  if (/\b(what time|current time|time is it)\b/.test(normalized)) {
-    return registry.get("current_time")
-      ? { toolId: "current_time", input: {} }
-      : null;
-  }
-  return null;
-}
-
 export type OrchestratorDeps = {
   engine?: ModelEngine;
   registry?: ToolRegistry;
+  /** Hard tool-iteration limit for one user turn. */
+  maxSteps?: number;
 };
+
+function toToolTrace(step: AgentStep): ToolTrace {
+  return {
+    toolId: step.toolId,
+    input: step.input,
+    ok: step.status === "completed",
+    summary: step.result ?? step.error ?? "",
+  };
+}
 
 export async function handleChatTurn(
   request: ChatRequest,
@@ -97,7 +94,6 @@ export async function handleChatTurn(
   const conversationId = request.conversationId ?? crypto.randomUUID();
   const mode: AssistantMode = request.mode ?? "companion";
   const intent = classifyIntent(request.message);
-  const toolsUsed: ToolTrace[] = [];
 
   const userMessage: ChatMessage = { role: "user", content: request.message };
   shortTermMemory.append(conversationId, userMessage);
@@ -115,35 +111,8 @@ export async function handleChatTurn(
       model: engine.model,
       intent,
       conversationId,
-      toolsUsed,
+      toolsUsed: [],
     };
-  }
-
-  // Skill decision — auto-run only skills that need no approval.
-  const candidate = pickTool(request.message, registry);
-  if (candidate) {
-    const tool = registry.get(candidate.toolId);
-    if (tool && !tool.requiresApproval) {
-      try {
-        const result = await registry.run(candidate.toolId, candidate.input, {
-          conversationId,
-        });
-        toolsUsed.push({
-          toolId: candidate.toolId,
-          input: candidate.input,
-          ok: true,
-          summary: result,
-        });
-      } catch (error) {
-        toolsUsed.push({
-          toolId: candidate.toolId,
-          input: candidate.input,
-          ok: false,
-          summary:
-            error instanceof ToolError ? error.message : "Skill failed to run.",
-        });
-      }
-    }
   }
 
   const history = shortTermMemory
@@ -154,36 +123,42 @@ export async function handleChatTurn(
   const system = [
     BASE_INSTRUCTIONS,
     MODE_INSTRUCTIONS[mode],
+    "You may call the skills provided to you when they genuinely help. If a skill is not needed, answer directly without calling one.",
     memoryNotes.length
       ? `Long-term memory the user saved (treat as facts about them):\n- ${memoryNotes.join("\n- ")}`
-      : "",
-    toolsUsed.length
-      ? `Skill results for this turn:\n${toolsUsed
-          .map((trace) => `${trace.toolId}: ${trace.summary}`)
-          .join("\n")}`
       : "",
   ]
     .filter(Boolean)
     .join("\n\n");
 
-  const result = await engine.generate({
-    system,
-    messages: history,
-    temperature: mode === "programming" ? 0.2 : 0.7,
-  });
+  const loop = await runAgentLoop(
+    { system, messages: history, conversationId },
+    { engine, registry },
+    {
+      maxSteps: deps.maxSteps ?? DEFAULT_MAX_AGENT_STEPS,
+      ...(request.approvedToolIds
+        ? { approvedToolIds: request.approvedToolIds }
+        : {}),
+      temperature: mode === "programming" ? 0.2 : 0.7,
+    },
+  );
 
   shortTermMemory.append(conversationId, {
     role: "assistant",
-    content: result.text,
+    content: loop.text,
   });
 
+  const plan = planStore.get(conversationId);
+
   return {
-    message: result.text,
+    message: loop.text,
     provider: engine.provider,
     model: engine.model,
     intent,
     conversationId,
-    toolsUsed,
+    toolsUsed: loop.steps.map(toToolTrace),
+    ...(plan.length ? { plan } : {}),
+    ...(loop.steps.length ? { steps: loop.steps } : {}),
   };
 }
 
