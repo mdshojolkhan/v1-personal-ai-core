@@ -168,3 +168,17 @@ export type AssistantStatus = {
   message: string;
   tools: number;
 };
+
+/** Workspace file metadata that is safe to send to the browser. */
+export type WorkspaceFileSummary = {
+  path: string;
+  bytes: number;
+  updatedAt: string;
+};
+
+export const workspaceDeleteRequestSchema = z.object({
+  path: z.string().min(1).max(300),
+});
+export type WorkspaceDeleteRequest = z.infer<
+  typeof workspaceDeleteRequestSchema
+>;
