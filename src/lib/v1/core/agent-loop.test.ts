@@ -23,6 +23,7 @@ function fakeEngine(script: ScriptedTurn[], supportsTools = true) {
   const engine: ModelEngine = {
     provider: "test",
     model: "test-model",
+    isConfigured: () => true,
     supportsTools,
     async generate(request) {
       requests.push(request);
@@ -50,13 +51,15 @@ function call(id: string, name: string, args: unknown) {
   return { id, name, arguments: args };
 }
 
-const base = { system: "sys", messages: [], conversationId: "c1" } as const;
+function baseRequest() {
+  return { system: "sys", messages: [], conversationId: "c1" };
+}
 
 describe("runAgentLoop", () => {
   test("returns a direct answer when the model calls no tool", async () => {
     const { engine } = fakeEngine([{ text: "hello there" }]);
     const result = await runAgentLoop(
-      { ...base, messages: [{ role: "user", content: "hi" }] },
+      { ...baseRequest(), messages: [{ role: "user", content: "hi" }] },
       { engine, registry: registryWithEcho() },
     );
 
@@ -70,7 +73,7 @@ describe("runAgentLoop", () => {
       { text: "", toolCalls: [call("1", "echo", { value: "a" })] },
       { text: "done" },
     ]);
-    const result = await runAgentLoop(base, {
+    const result = await runAgentLoop(baseRequest(), {
       engine,
       registry: registryWithEcho(),
     });
@@ -89,7 +92,7 @@ describe("runAgentLoop", () => {
       { text: "", toolCalls: [call("2", "echo", { value: "b" })] },
       { text: "finished" },
     ]);
-    const result = await runAgentLoop(base, {
+    const result = await runAgentLoop(baseRequest(), {
       engine,
       registry: registryWithEcho(),
     });
@@ -103,7 +106,7 @@ describe("runAgentLoop", () => {
       { text: "", toolCalls: [call("1", "echo", { value: "a" })] },
     ]);
     const result = await runAgentLoop(
-      base,
+      baseRequest(),
       { engine, registry: registryWithEcho() },
       { maxSteps: 3 },
     );
@@ -119,7 +122,7 @@ describe("runAgentLoop", () => {
       { text: "", toolCalls: [call("1", "not_a_tool", {})] },
       { text: "recovered" },
     ]);
-    const result = await runAgentLoop(base, {
+    const result = await runAgentLoop(baseRequest(), {
       engine,
       registry: registryWithEcho(),
     });
@@ -133,7 +136,7 @@ describe("runAgentLoop", () => {
       { text: "", toolCalls: [call("1", "echo", { value: 42 })] },
       { text: "after invalid args" },
     ]);
-    const result = await runAgentLoop(base, {
+    const result = await runAgentLoop(baseRequest(), {
       engine,
       registry: registryWithEcho(),
     });
@@ -147,7 +150,7 @@ describe("runAgentLoop", () => {
       { text: "", toolCalls: [call("1", "echo", "{not json")] },
       { text: "ok" },
     ]);
-    const result = await runAgentLoop(base, {
+    const result = await runAgentLoop(baseRequest(), {
       engine,
       registry: registryWithEcho(),
     });
@@ -174,7 +177,7 @@ describe("runAgentLoop", () => {
       { text: "", toolCalls: [call("1", "device_thing", {})] },
       { text: "explained the limitation" },
     ]);
-    const result = await runAgentLoop(base, { engine, registry });
+    const result = await runAgentLoop(baseRequest(), { engine, registry });
 
     expect(result.steps[0]!.status).toBe("refused");
     expect(result.text).toBe("explained the limitation");
@@ -199,7 +202,7 @@ describe("runAgentLoop", () => {
       { text: "", toolCalls: [call("1", "danger", {})] },
       { text: "asked for approval" },
     ]);
-    const denied = await runAgentLoop(base, { engine, registry });
+    const denied = await runAgentLoop(baseRequest(), { engine, registry });
     expect(denied.steps[0]!.status).toBe("refused");
 
     const second = fakeEngine([
@@ -207,7 +210,7 @@ describe("runAgentLoop", () => {
       { text: "approved run" },
     ]);
     const allowed = await runAgentLoop(
-      base,
+      baseRequest(),
       { engine: second.engine, registry },
       { approvedToolIds: ["danger"] },
     );
@@ -233,7 +236,7 @@ describe("runAgentLoop", () => {
       { text: "", toolCalls: [call("1", "boom", {})] },
       { text: "handled" },
     ]);
-    const result = await runAgentLoop(base, { engine, registry });
+    const result = await runAgentLoop(baseRequest(), { engine, registry });
 
     expect(result.steps[0]!.status).toBe("failed");
     expect(result.steps[0]!.error).not.toContain("SECRET_TOKEN");
@@ -242,7 +245,7 @@ describe("runAgentLoop", () => {
 
   test("skips tools entirely when the engine has no tool support", async () => {
     const { engine, requests } = fakeEngine([{ text: "plain answer" }], false);
-    const result = await runAgentLoop(base, {
+    const result = await runAgentLoop(baseRequest(), {
       engine,
       registry: registryWithEcho(),
     });
@@ -256,13 +259,14 @@ describe("runAgentLoop", () => {
     const engine: ModelEngine = {
       provider: "test",
       model: "test-model",
+      isConfigured: () => true,
       supportsTools: true,
       async generate() {
         throw new ModelEngineError("unavailable", "engine down");
       },
     };
     await expect(
-      runAgentLoop(base, { engine, registry: registryWithEcho() }),
+      runAgentLoop(baseRequest(), { engine, registry: registryWithEcho() }),
     ).rejects.toBeInstanceOf(ModelEngineError);
   });
 });
