@@ -4,6 +4,7 @@ import {
   Menu,
   MoreHorizontal,
   PanelLeft,
+  LayoutTemplate,
   Settings2,
   Sparkles,
   X,
@@ -54,8 +55,16 @@ export function AppShell({ children }: { children: ReactNode }) {
               ) : null}
             </Link>
             <Link
+              to="/workspace"
+              className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${location.pathname === '/workspace' ? 'bg-[hsl(var(--sidebar-accent))] text-[hsl(var(--sidebar-foreground))]' : 'text-[hsl(var(--sidebar-foreground)/.62)] hover:bg-[hsl(var(--sidebar-accent))] hover:text-[hsl(var(--sidebar-foreground))]'}`}
+              data-testid="link-workspace"
+            >
+              <LayoutTemplate className="h-[17px] w-[17px]" strokeWidth={1.8} />
+              <span>Workspace</span>
+            </Link>
+            <Link
               to="/settings"
-              className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${!onChat ? 'bg-[hsl(var(--sidebar-accent))] text-[hsl(var(--sidebar-foreground))]' : 'text-[hsl(var(--sidebar-foreground)/.62)] hover:bg-[hsl(var(--sidebar-accent))] hover:text-[hsl(var(--sidebar-foreground))]'}`}
+              className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${location.pathname === '/settings' ? 'bg-[hsl(var(--sidebar-accent))] text-[hsl(var(--sidebar-foreground))]' : 'text-[hsl(var(--sidebar-foreground)/.62)] hover:bg-[hsl(var(--sidebar-accent))] hover:text-[hsl(var(--sidebar-foreground))]'}`}
               data-testid="link-settings"
             >
               <Settings2 className="h-[17px] w-[17px]" strokeWidth={1.8} />
@@ -151,10 +160,18 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Link
                   to="/settings"
                   onClick={() => setMobileNav(false)}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm ${!onChat ? 'bg-[hsl(var(--sidebar-accent))]' : 'text-[hsl(var(--sidebar-foreground)/.62)]'}`}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm ${location.pathname === '/settings' ? 'bg-[hsl(var(--sidebar-accent))]' : 'text-[hsl(var(--sidebar-foreground)/.62)]'}`}
                   data-testid="link-mobile-settings"
                 >
                   <Settings2 className="h-4 w-4" /> Settings
+                </Link>
+                <Link
+                  to="/workspace"
+                  onClick={() => setMobileNav(false)}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm ${location.pathname === '/workspace' ? 'bg-[hsl(var(--sidebar-accent))]' : 'text-[hsl(var(--sidebar-foreground)/.62)]'}`}
+                  data-testid="link-mobile-workspace"
+                >
+                  <LayoutTemplate className="h-4 w-4" /> Workspace
                 </Link>
               </nav>
             </div>
