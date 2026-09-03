@@ -463,3 +463,22 @@
     inset: -1px;
   }
 }
+
+/* ================= V1 Workspace surface tokens ================= */
+.v1ws {
+  --ws-bg: #080b12;
+  --ws-panel: #0e131d;
+  --ws-border: #202938;
+  --ws-text: #edf2f7;
+  --ws-muted: #8995a7;
+  --ws-accent: #7c5cff;
+  --ws-accent-2: #23c7a8;
+  --ws-user: #17223a;
+  --ws-hover: #171e2b;
+  --ws-top: #0a0e16;
+  --ws-left: #0b1018;
+  --ws-right: #090d14;
+  --ws-stage: #070a10;
+  color: var(--ws-text);
+  background: var(--ws-bg);
+}
