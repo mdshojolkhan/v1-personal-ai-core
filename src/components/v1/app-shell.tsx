@@ -3,7 +3,6 @@ import { useState, type ReactNode } from 'react';
 import {
   Menu,
   MoreHorizontal,
-  PanelLeft,
   LayoutTemplate,
   Settings2,
   Sparkles,
