@@ -466,19 +466,63 @@
 
 /* ================= V1 Workspace surface tokens ================= */
 .v1ws {
-  --ws-bg: #080b12;
-  --ws-panel: #0e131d;
-  --ws-border: #202938;
-  --ws-text: #edf2f7;
-  --ws-muted: #8995a7;
-  --ws-accent: #7c5cff;
-  --ws-accent-2: #23c7a8;
-  --ws-user: #17223a;
-  --ws-hover: #171e2b;
-  --ws-top: #0a0e16;
-  --ws-left: #0b1018;
-  --ws-right: #090d14;
-  --ws-stage: #070a10;
+  --ws-base: #0a0a10;
+  --ws-panel: #121219;
+  --ws-raised: #1a1a24;
+  --ws-bubble-user: #6c5dd3;
+  --ws-bubble-bot: #181822;
+  --ws-line: #24242f;
+  --ws-line-soft: #1b1b24;
+  --ws-text: #e9e8f0;
+  --ws-muted: #8b899c;
+  --ws-dim: #56546a;
+  --ws-accent: #6c5dd3;
+  --ws-accent-hover: #7c6ee0;
+  --ws-ready: #4fae7d;
+  --ws-warn: #d89b4e;
+  --ws-danger: #d9695f;
   color: var(--ws-text);
-  background: var(--ws-bg);
+  background: var(--ws-base);
 }
+
+.v1ws .ws-noscroll {
+  scrollbar-width: none;
+}
+
+.v1ws .ws-noscroll::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes ws-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.v1ws .ws-pulse {
+  animation: ws-pulse 2s ease-in-out infinite;
+}
+
+.v1ws .ws-pulse-fast {
+  animation: ws-pulse 0.7s ease-in-out infinite;
+}
+
+@keyframes ws-msg-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.v1ws .ws-msg-in {
+  animation: ws-msg-in 0.18s ease;
+}
+
