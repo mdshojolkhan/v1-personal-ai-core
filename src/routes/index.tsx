@@ -94,10 +94,9 @@ function autoTitle(text: string) {
 }
 
 function emptyTabs(): Record<ProviderId, string[]> {
-  return Object.fromEntries(PROVIDER_IDS.map((p) => [p, []])) as Record<
-    ProviderId,
-    string[]
-  >;
+  return Object.fromEntries(
+    PROVIDER_IDS.map((p) => [p, [] as string[]]),
+  ) as unknown as Record<ProviderId, string[]>;
 }
 
 function normalize(raw: unknown): WsState {
@@ -141,7 +140,7 @@ function ensureTabs(state: WsState): WsState {
     next.openTabs[provider] = ids;
     const active = next.activeTab[provider];
     if (!active || !ids.includes(active)) {
-      next.activeTab[provider] = ids[ids.length - 1];
+      next.activeTab[provider] = ids[ids.length - 1] ?? '';
     }
   }
   return next;
