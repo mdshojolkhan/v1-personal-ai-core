@@ -16,9 +16,15 @@ import {
 export const Route = createFileRoute("/api/v1/workspace")({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
         try {
           assertPermissions(["fs:workspace"]);
+          const path = new URL(request.url).searchParams.get("path");
+          if (path) {
+            const file = await workspaceStore.read(path);
+            if (!file) return apiError("invalid_request", "File not found.", 404);
+            return json({ path: file.path, content: file.content });
+          }
           const files = await workspaceStore.list();
           const summaries: WorkspaceFileSummary[] = files.map((file) => ({
             path: file.path,
@@ -26,6 +32,19 @@ export const Route = createFileRoute("/api/v1/workspace")({
             updatedAt: file.updatedAt,
           }));
           return json(summaries);
+        } catch (error) {
+          return errorToResponse(error);
+        }
+      },
+      PUT: async ({ request }) => {
+        const body = await readJsonBody(request);
+        if (!body.ok) return body.response;
+        try {
+          // Saving goes through the registry's file_write skill (validation + permissions).
+          const result = await toolRegistry.run("file_write", body.value, {
+            conversationId: "workspace-panel",
+          });
+          return json({ ok: true, result });
         } catch (error) {
           return errorToResponse(error);
         }

@@ -1001,38 +1001,11 @@ function WorkspacePage() {
               </span>
             </div>
 
-            <div
-              className="flex min-h-0 flex-1 justify-center overflow-auto rounded-xl border p-3"
-              style={{
-                borderColor: 'var(--ws-line)',
-                background: 'var(--ws-panel)',
-              }}
-            >
-              <DemoSite maxWidth={DEVICES[device]} />
-            </div>
-
-            {filesOpen ? (
-              <div
-                className="mt-3 rounded-xl border p-3"
-                style={{
-                  borderColor: 'var(--ws-line)',
-                  background: 'var(--ws-panel)',
-                }}
-                data-testid="panel-files"
-              >
-                <h3 className="mb-2 text-sm font-medium">Project Files</h3>
-                <ul
-                  className="space-y-0.5 text-sm"
-                  style={{ color: 'var(--ws-muted)' }}
-                >
-                  {FILES.map((file) => (
-                    <li key={file} className="rounded px-2 py-1">
-                      {file}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
+            <BuilderPanel
+              tool={tool}
+              maxWidth={DEVICES[device]}
+              filesOpen={filesOpen}
+            />
           </div>
         </div>
       ) : null}
