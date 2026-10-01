@@ -1,3 +1,4 @@
+import { BuilderPanel } from '@/components/v1/builder-panel';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
