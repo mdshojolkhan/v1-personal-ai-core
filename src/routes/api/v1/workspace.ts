@@ -81,7 +81,7 @@ export const Route = createFileRoute("/api/v1/workspace")({
           const result = await toolRegistry.run(
             "file_delete",
             { path: parsed.data.path },
-            { conversationId: "workspace-panel" },
+            { conversationId: "workspace-panel", aiRole: "user" },
             { approved: true },
           );
           return json({ ok: true, result });
