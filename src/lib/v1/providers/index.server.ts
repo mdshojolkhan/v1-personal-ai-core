@@ -177,7 +177,16 @@ export function resolveChatEngine(
   const adminId = providerStore.getAdmin();
   if (providerId && providerId !== adminId) {
     const engine = createProviderEngine(providerId);
-    if (!engine) throw new ProviderRoleError("That helper AI is not enabled or configured.");
+    if (!engine) {
+      const def = getProviderDefinition(providerId);
+      const name = def?.displayName ?? providerId;
+      const missingKey = def ? !resolveKey(def).key : true;
+      throw new ProviderRoleError(
+        missingKey
+          ? `${name} has no API key. Add one in Settings → AI Providers and enable it.`
+          : `${name} is not enabled. Enable it in Settings → AI Providers.`,
+      );
+    }
     return { engine, role: "helper", providerId };
   }
   const admin = getAdminProviderEngine();
