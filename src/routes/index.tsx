@@ -51,6 +51,14 @@ const PROVIDERS = {
 } as const;
 type ProviderId = keyof typeof PROVIDERS;
 const PROVIDER_IDS = Object.keys(PROVIDERS) as ProviderId[];
+/** UI tab → server provider id. V1 = server-chosen Admin AI (or built-in engine). */
+const SERVER_PROVIDER: Record<ProviderId, 'openai' | 'gemini' | 'xai' | undefined> = {
+  v1: undefined,
+  chatgpt: 'openai',
+  grok: 'xai',
+  gemini: 'gemini',
+  aistudio: 'gemini',
+};
 
 const DOT_COLORS: Record<ProviderId, string> = {
   v1: 'var(--ws-accent)',
@@ -438,6 +446,7 @@ function WorkspacePage() {
       const response = await sendChatMessage({
         message: attachedFile ? `${text}\n\n[attached file: ${attachedFile}]` : text,
         mode: 'companion',
+        ...(SERVER_PROVIDER[provider] ? { providerId: SERVER_PROVIDER[provider] } : {}),
         history: history
           .slice(-12)
           .map((item) => ({ role: item.role, content: item.content })),
@@ -1117,54 +1126,5 @@ function SmallButton({
     >
       {children}
     </button>
-  );
-}
-
-function DemoSite({ maxWidth }: { maxWidth: string }) {
-  return (
-    <div
-      className="min-h-full w-full overflow-hidden rounded-lg bg-white text-[#111827] shadow-[0_15px_50px_#0008] transition-[max-width] duration-300"
-      style={{ maxWidth }}
-    >
-      <nav className="flex h-[54px] items-center justify-between border-b border-[#e5e7eb] px-6">
-        <span className="font-black text-[#6c5dd3]">V1</span>
-        <span className="hidden text-xs text-[#64748b] sm:inline">
-          Home　Projects　About　Contact
-        </span>
-      </nav>
-      <div className="bg-gradient-to-b from-[#f7f5ff] to-white px-7 py-14 text-center">
-        <h2 className="mb-3 text-[clamp(26px,5vw,48px)] font-semibold tracking-[-2px]">
-          Build with V1 AI
-        </h2>
-        <p className="mx-auto mb-5 max-w-[560px] text-sm leading-relaxed text-[#64748b]">
-          A modern AI workspace where multiple AI assistants meet a powerful app
-          and web builder.
-        </p>
-        <span className="inline-block rounded-lg bg-[#6c5dd3] px-4 py-2.5 text-sm text-white">
-          Get Started
-        </span>
-      </div>
-      <div className="grid gap-3 p-5 sm:grid-cols-3">
-        {[
-          [
-            'Multi-AI',
-            'Keep ChatGPT, Grok, Gemini, AI Studio and V1 conversations separate.',
-          ],
-          [
-            'AI Builder',
-            'Describe your idea and turn it into a beautiful project preview.',
-          ],
-          [
-            'Deploy',
-            'Prepare projects for deployment from one professional workspace.',
-          ],
-        ].map(([title, body]) => (
-          <div key={title} className="rounded-[10px] border border-[#e5e7eb] p-4">
-            <b className="mb-1.5 block text-sm">{title}</b>
-            <p className="m-0 text-xs leading-relaxed text-[#64748b]">{body}</p>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }
