@@ -23,18 +23,29 @@ async function readFile(path: string): Promise<string> {
   return data.content ?? '';
 }
 
-function buildPreview(files: Record<string, string>): string | null {
-  const html = files['site/index.html'];
-  if (!html) return null;
-  const css = files['site/styles.css'] ?? '';
-  const js = files['site/script.js'] ?? '';
-  const safeJs = js.replace(/<\/script/gi, '<\\/script');
-  return html
-    .replace(/<link[^>]*href=["']\.?\/?styles\.css["'][^>]*>/i, `<style>${css}</style>`)
-    .replace(
-      /<script[^>]*src=["']\.?\/?script\.js["'][^>]*><\/script>/i,
-      `<script>${safeJs}</script>`,
-    );
+/** Removes a markdown code fence the model may have wrapped around a file. */
+function stripFence(text: string): string {
+  const m = text.trim().match(/^```[a-zA-Z0-9]*\n([\s\S]*?)\n?```$/);
+  return m ? m[1]! : text;
+}
+
+type PreviewResult = { html: string } | { error: string } | null;
+
+function buildPreview(files: Record<string, string>): PreviewResult {
+  const raw = files['site/index.html'];
+  if (raw === undefined) return null;
+  const html = stripFence(raw);
+  // Never render source code as text: only real HTML documents are previewed.
+  if (!/<(html|body|head|!doctype|div|main|section|h1|p)\b/i.test(html)) {
+    return { error: 'site/index.html is not valid HTML, so it cannot be previewed. Open it in Files to fix it.' };
+  }
+  const css = stripFence(files['site/styles.css'] ?? '').replace(/<\/style/gi, '<\\/style');
+  const js = stripFence(files['site/script.js'] ?? '').replace(/<\/script/gi, '<\\/script');
+  let out = html
+    .replace(/<link[^>]*href=["']\.?\/?styles\.css["'][^>]*>/gi, () => `<style>${css}</style>`)
+    .replace(/<script[^>]*src=["']\.?\/?script\.js["'][^>]*>\s*<\/script>/gi, () => `<script>${js}</script>`);
+  if (css && !out.includes(css)) out = `<style>${css}</style>${out}`;
+  return { html: out };
 }
 
 export function BuilderPanel({
@@ -279,10 +290,14 @@ export function BuilderPanel({
         className="flex min-h-[320px] flex-1 justify-center rounded-xl border p-3"
         style={box}
       >
-        {preview ? (
+        {preview && 'error' in preview ? (
+          <p className="self-center text-sm" role="alert" style={{ color: 'var(--ws-danger)' }}>
+            Preview failed: {preview.error}
+          </p>
+        ) : preview ? (
           <iframe
             title="Workspace preview"
-            srcDoc={preview}
+            srcDoc={preview.html}
             sandbox="allow-scripts"
             className="h-full min-h-[300px] w-full rounded-lg bg-background"
             style={{ maxWidth }}
