@@ -9,10 +9,15 @@
 import type { ModelEngine } from "./engine";
 import { createCloudEngine } from "./lovable.server";
 import { createLocalEngine } from "./local.server";
+import { getAdminProviderEngine } from "../providers/index.server";
 
 export const DEFAULT_CLOUD_MODEL = "google/gemini-3.7-flash";
 
 export function getModelEngine(): ModelEngine {
+  // The Admin AI chosen in Settings → AI Providers takes precedence.
+  const selected = getAdminProviderEngine();
+  if (selected) return selected;
+
   const configured = (process.env["V1_MODEL_PROVIDER"] ?? "").toLowerCase();
   const model = process.env["V1_MODEL"] ?? DEFAULT_CLOUD_MODEL;
 

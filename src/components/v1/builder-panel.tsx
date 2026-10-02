@@ -55,6 +55,7 @@ export function BuilderPanel({
   const [openPath, setOpenPath] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -91,8 +92,17 @@ export function BuilderPanel({
       const wrote = (res.steps ?? []).filter(
         (s) => s.toolId === 'file_write' && s.status === 'completed',
       );
-      if (!wrote.length) setError('V1 did not save any files. Try a more specific prompt.');
-      setSummary(res.message);
+      if (!wrote.length) {
+        setError(
+          res.aiRole === 'helper'
+            ? 'A Helper AI cannot write files. Select an Admin AI in Settings → AI Providers.'
+            : /local/i.test(res.provider)
+              ? 'No AI model is connected, so no files were created. Add an API key and set an Admin AI in Settings → AI Providers.'
+              : 'The AI replied but did not save any files. Try a more specific prompt.',
+        );
+      } else {
+        setSummary(res.message);
+      }
       await refresh();
     } catch (e) {
       setError(
@@ -108,6 +118,7 @@ export function BuilderPanel({
     try {
       const content = await readFile(path);
       setOpenPath(path);
+      setNotice(null);
       setDraft(content);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not open that file.');
@@ -118,6 +129,7 @@ export function BuilderPanel({
     if (!openPath) return;
     setSaving(true);
     setError(null);
+    setNotice(null);
     try {
       const res = await fetch('/api/v1/workspace', {
         method: 'PUT',
@@ -125,10 +137,14 @@ export function BuilderPanel({
         body: JSON.stringify({ path: openPath, content: draft }),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
-      if (!res.ok) throw new Error(data.error ?? 'Could not save the file.');
+      if (!res.ok) throw new Error(data.error ?? `Save failed (HTTP ${res.status}).`);
+      // Read back from the workspace to confirm the content really persisted.
+      const stored = await readFile(openPath);
+      if (stored !== draft) throw new Error('Save failed: the stored file does not match your edits.');
       await refresh();
+      setNotice(`Saved ${openPath}.`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not save the file.');
+      setError(e instanceof Error ? `Save failed: ${e.message.replace(/^Save failed:?\s*/, '')}` : 'Save failed.');
     } finally {
       setSaving(false);
     }
@@ -136,11 +152,14 @@ export function BuilderPanel({
 
   const preview = useMemo(() => buildPreview(contents), [contents]);
   const box = { borderColor: 'var(--ws-line)', background: 'var(--ws-panel)' };
-  const showEditor = tool === 'Edit' || openPath !== null;
+  // Preview tab: only the rendered app. Files/Edit: file list + editor, never the preview.
+  const filesMode = filesOpen || tool === 'Files' || tool === 'Edit';
+  const previewOnly = tool === 'Preview';
+  const showPrompt = !previewOnly && !filesMode;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto">
-      {(tool === 'Prompt' || tool === 'Generate') && (
+      {showPrompt && (
         <div className="rounded-xl border p-3" style={box}>
           <textarea
             value={prompt}
@@ -179,7 +198,18 @@ export function BuilderPanel({
         </p>
       ) : null}
 
-      {(filesOpen || tool === 'Edit') && (
+      {notice && !previewOnly ? (
+        <p
+          className="rounded-lg border px-3 py-2 text-sm"
+          style={{ borderColor: 'var(--ws-accent)', color: 'var(--ws-accent)' }}
+          role="status"
+          data-testid="text-builder-notice"
+        >
+          {notice}
+        </p>
+      ) : null}
+
+      {filesMode && (
         <div className="rounded-xl border p-3" style={box} data-testid="panel-files">
           <h3 className="mb-2 text-sm font-medium">Project Files</h3>
           {files.length === 0 ? (
@@ -207,7 +237,7 @@ export function BuilderPanel({
         </div>
       )}
 
-      {showEditor && openPath ? (
+      {filesMode && openPath ? (
         <div className="rounded-xl border p-3" style={box}>
           <div className="mb-2 flex items-center justify-between text-sm">
             <span className="truncate">{openPath}</span>
@@ -244,6 +274,7 @@ export function BuilderPanel({
         </div>
       ) : null}
 
+      {!filesMode && (
       <div
         className="flex min-h-[320px] flex-1 justify-center rounded-xl border p-3"
         style={box}
@@ -263,6 +294,7 @@ export function BuilderPanel({
           </p>
         )}
       </div>
+      )}
     </div>
   );
 }
